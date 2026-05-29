@@ -1,0 +1,67 @@
+{
+  "id": "api-gateway",
+  "title": "API Gateway",
+  "description": "Entry point for client requests",
+  "depth": 1,
+  "children": [
+    {
+      "id": "request-intake",
+      "title": "Request Intake",
+      "description": "Receive and normalize incoming requests",
+      "depth": 2,
+      "children": [
+        {
+          "id": "auth-validation",
+          "title": "Auth + Validation",
+          "description": "Authenticate and validate headers/body",
+          "depth": 3,
+          "children": []
+        },
+        {
+          "id": "rate-limit",
+          "title": "Rate Limiting",
+          "description": "Throttle abusive or excessive traffic",
+          "depth": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "routing",
+      "title": "Routing",
+      "description": "Route to downstream services",
+      "depth": 2,
+      "children": [
+        {
+          "id": "service-discovery",
+          "title": "Service Discovery",
+          "description": "Resolve destination service",
+          "depth": 3,
+          "children": []
+        },
+        {
+          "id": "request-transform",
+          "title": "Request Transform",
+          "description": "Adapt protocol/format as needed",
+          "depth": 3,
+          "children": []
+        }
+      ]
+    },
+    {
+      "id": "response-handling",
+      "title": "Response Handling",
+      "description": "Aggregate and return responses",
+      "depth": 2,
+      "children": [
+        {
+          "id": "logging",
+          "title": "Logging + Metrics",
+          "description": "Capture tracing and metrics",
+          "depth": 3,
+          "children": []
+        }
+      ]
+    }
+  ]
+}
