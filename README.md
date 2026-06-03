@@ -97,4 +97,4 @@ For issues, questions, or suggestions, please open an [issue](https://github.com
 
 ---
 
-**Made with ❤️ by [nidhishh](https://github.com/nidhishh)**
+**Made with ❤️ by [nidhishh](https://github.com/nidhishh) and [thatdepartedkid](https://github.com/thatdepartedkid)**
