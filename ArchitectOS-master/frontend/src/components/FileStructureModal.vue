@@ -1,23 +1,31 @@
 <template>
-  <div class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center" @click.self="store.toggleFileStructure()">
-    <div class="glass rounded-2xl w-[500px] max-h-[70vh] flex flex-col overflow-hidden">
-      <div class="flex items-center justify-between p-4 border-b border-white/5">
-        <h3 class="text-lg font-semibold text-white">📁 File Structure</h3>
-        <button class="text-textSecondary hover:text-white transition text-lg" @click="store.toggleFileStructure()">✕</button>
+  <div class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center backdrop-blur-none" @click.self="store.toggleFileStructure()">
+    <div class="glass-modal rounded-none w-[480px] max-h-[70vh] flex flex-col overflow-hidden border border-borderMuted shadow-2xl">
+      <div class="flex items-center justify-between p-5 border-b border-borderMuted bg-surfaceHover">
+        <h3 class="text-base font-semibold text-textPrimary flex items-center gap-2">
+          <svg class="w-4 h-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <span>File Structure</span>
+        </h3>
+        <button class="text-textSecondary hover:text-textPrimary transition-colors duration-200" @click="store.toggleFileStructure()">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
       </div>
-      <div class="p-4 overflow-y-auto flex-1">
-        <div v-if="store.fileStructure.length === 0" class="text-textSecondary text-sm text-center py-8">
+      <div class="p-6 overflow-y-auto flex-1 select-none">
+        <div v-if="store.fileStructure.length === 0" class="text-textSecondary text-sm text-center py-10 font-medium">
           No file structure generated yet.
         </div>
-        <div v-else class="font-mono text-xs space-y-0.5">
+        <div v-else class="font-mono text-xs space-y-1">
           <div
             v-for="file in treeLines"
             :key="file.path"
-            class="text-textSecondary hover:text-white transition"
-            :style="{ paddingLeft: file.indent * 16 + 'px' }"
+            class="group flex items-center gap-2 py-1 px-1.5 rounded-none text-textSecondary hover:text-textPrimary hover:bg-surfaceHover cursor-pointer transition duration-150"
+            :style="{ paddingLeft: file.indent * 16 + 8 + 'px' }"
           >
-            <span :class="file.isDir ? 'text-accent' : 'text-textSecondary'">
-              {{ file.isDir ? '📂' : '📄' }} {{ file.name }}
+            <span :class="file.isDir ? 'text-accent' : 'text-textSecondary/60'">
+              {{ file.isDir ? '📂' : '📄' }}
+            </span>
+            <span :class="file.isDir ? 'font-medium text-accent' : 'text-textSecondary group-hover:text-textPrimary'">
+              {{ file.name }}
             </span>
           </div>
         </div>

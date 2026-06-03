@@ -8,28 +8,31 @@
       :fit-view-on-init="true"
       :min-zoom="0.05"
       :max-zoom="3"
-      :default-viewport="{ zoom: 0.8, x: 0, y: 0 }"
+      :default_viewport="{ zoom: 0.8, x: 0, y: 0 }"
       @nodeClick="onNodeClick"
     >
       <Background :gap="24" :size="1" />
       <MiniMap
         :pannable="true"
         :zoomable="true"
-        class="!bg-surface/80 !border-white/10 !rounded-xl"
+        class="!bg-surface/85 !border-borderMuted !rounded-none"
       />
-      <Controls class="!bg-surface/80 !border-white/10 !rounded-xl" />
+      <Controls class="!bg-surface/85 !border-borderMuted !rounded-none" />
     </VueFlow>
 
     <!-- Breadcrumbs -->
-    <div v-if="breadcrumbs.length" class="absolute top-4 left-4 glass px-4 py-2 rounded-xl text-sm z-40 flex items-center gap-1">
-      <button class="text-accent hover:text-white transition mr-2" @click="store.goBack()">← Back</button>
+    <div v-if="breadcrumbs.length" class="absolute top-4 left-4 glass-card px-4 py-2.5 rounded-none text-xs font-semibold z-40 flex items-center gap-1 shadow-md">
+      <button class="text-accent hover:text-accent/80 flex items-center gap-1 transition mr-3 border-r border-borderMuted pr-3" @click="store.goBack()">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+        <span>Back</span>
+      </button>
       <span
         v-for="(crumb, idx) in breadcrumbs"
         :key="crumb.id"
-        class="cursor-pointer hover:text-accent transition"
+        class="cursor-pointer hover:text-accent transition duration-150"
         @click="store.focusNode(crumb.id)"
       >
-        {{ crumb.title }}<span v-if="idx < breadcrumbs.length - 1" class="text-textSecondary mx-1">/</span>
+        {{ crumb.title }}<span v-if="idx < breadcrumbs.length - 1" class="text-textSecondary/40 mx-2">/</span>
       </span>
     </div>
   </div>

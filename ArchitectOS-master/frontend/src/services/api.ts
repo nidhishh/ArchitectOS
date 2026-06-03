@@ -76,3 +76,9 @@ export async function getAstPreview(files: { path: string; content: string }[]) 
   }
   return res.json();
 }
+
+export async function getGraphData() {
+  const res = await apiFetch("/graph");
+  if (!res.ok) throw new Error("Failed to fetch graph data");
+  return res.json();
+}

@@ -4,15 +4,17 @@ import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
 import multer from "multer";
-import * as babelParser from "@babel/parser";
-import traverseModule from "@babel/traverse";
-
-const traverse: any = (traverseModule as any).default || traverseModule;
+import { buildApiHandler } from "./src/api/ApiHandler";
+import { KnowledgeGraph } from "./src/graph/KnowledgeGraph";
+import { RepositoryParser } from "./src/parser/RepositoryParser";
+import { ArchitectureExtractor } from "./src/extractor/ArchitectureExtractor";
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
+const apiHandler = buildApiHandler();
+const globalGraph = new KnowledgeGraph();
 app.use(express.json({ limit: "10mb" }));
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
@@ -41,220 +43,41 @@ function rethrowIfTimeout(err: unknown, timeoutMs: number): never {
 
 const upload = multer({ dest: "/tmp/architect-os-uploads/" });
 
-const AST_SUPPORTED_EXTENSIONS = new Set([
-  ".js",
-  ".mjs",
-  ".cjs",
-  ".ts",
-  ".tsx",
-  ".jsx",
-]);
-
-type AstNodeSummary = {
-  type: "class" | "function";
-  name: string;
-  filePath: string;
-  superClass?: string | null;
-  methods?: string[];
-  params?: string[];
-  isAsync?: boolean;
-};
-
-type AstEdgeSummary = {
-  type: "imports" | "extends" | "calls" | "exports";
-  from: string;
-  to: string;
-  filePath: string;
-};
-
-type AstGraphSummary = {
-  parsedFiles: number;
-  skippedFiles: number;
-  errors: number;
-  nodes: AstNodeSummary[];
-  edges: AstEdgeSummary[];
-};
-
-function getExtension(filePath: string): string {
-  const normalized = filePath.replace(/\\/g, "/");
-  const dot = normalized.lastIndexOf(".");
-  if (dot < 0) return "";
-  return normalized.slice(dot).toLowerCase();
-}
-
-function collectAstFromFile(filePath: string, code: string): AstGraphSummary {
-  const nodes: AstNodeSummary[] = [];
-  const edges: AstEdgeSummary[] = [];
-  const ast = babelParser.parse(code, {
-    sourceType: "unambiguous",
-    errorRecovery: true,
-    plugins: [
-      "typescript",
-      "jsx",
-      "classProperties",
-      "decorators-legacy",
-      "dynamicImport",
-      "importMeta",
-      "topLevelAwait",
-    ],
-  });
-
-  traverse(ast, {
-    ImportDeclaration(path: any) {
-      const source = path.node.source.value;
-      if (!source) return;
-      edges.push({
-        type: "imports",
-        from: filePath,
-        to: String(source),
-        filePath,
-      });
-    },
-    ClassDeclaration(path: any) {
-      const className = path.node.id?.name;
-      if (!className) return;
-      const methods = path.node.body.body
-        .filter((m: any) => m.type === "ClassMethod")
-        .map((m: any) => `${m.async ? "async " : ""}${m.key?.name || "anonymous"}()`);
-      const superClass =
-        path.node.superClass && path.node.superClass.type === "Identifier"
-          ? path.node.superClass.name
-          : null;
-
-      nodes.push({
-        type: "class",
-        name: className,
-        filePath,
-        superClass,
-        methods,
-      });
-
-      if (superClass) {
-        edges.push({ type: "extends", from: className, to: superClass, filePath });
-      }
-    },
-    FunctionDeclaration(path: any) {
-      const fnName = path.node.id?.name;
-      if (!fnName) return;
-      const params = path.node.params.map((p: any) => {
-        if (p.type === "Identifier") return p.name;
-        return "param";
-      });
-      nodes.push({
-        type: "function",
-        name: fnName,
-        filePath,
-        params,
-        isAsync: Boolean(path.node.async),
-      });
-    },
-    CallExpression(path: any) {
-      const callee = path.node.callee;
-      let calleeName: string | null = null;
-      if (callee.type === "Identifier") calleeName = callee.name;
-      if (callee.type === "MemberExpression" && callee.property?.type === "Identifier") {
-        calleeName = callee.property.name;
-      }
-      if (!calleeName) return;
-
-      let callerName = "(top-level)";
-      let ancestor = path.parentPath;
-      while (ancestor) {
-        if (ancestor.node.type === "ClassMethod") {
-          callerName = (ancestor.node as any).key?.name || callerName;
-          break;
-        }
-        if (ancestor.node.type === "FunctionDeclaration") {
-          callerName = (ancestor.node as any).id?.name || callerName;
-          break;
-        }
-        ancestor = ancestor.parentPath;
-      }
-
-      edges.push({ type: "calls", from: callerName, to: calleeName, filePath });
-    },
-    ExportDefaultDeclaration(path: any) {
-      const decl: any = path.node.declaration;
-      const name = decl?.id?.name || "default";
-      edges.push({ type: "exports", from: filePath, to: name, filePath });
-    },
-    ExportNamedDeclaration(path: any) {
-      const names = (path.node.specifiers || [])
-        .map((s: any) => s?.exported?.name)
-        .filter(Boolean);
-      names.forEach((name: string) => {
-        edges.push({ type: "exports", from: filePath, to: name, filePath });
-      });
-    },
-  });
-
-  return {
-    parsedFiles: 1,
-    skippedFiles: 0,
-    errors: 0,
-    nodes,
-    edges,
-  };
-}
-
-function buildAstGraphSummary(files: { path: string; content: string }[]): AstGraphSummary {
-  const merged: AstGraphSummary = {
-    parsedFiles: 0,
-    skippedFiles: 0,
-    errors: 0,
-    nodes: [],
-    edges: [],
-  };
-
-  for (const file of files) {
-    const extension = getExtension(file.path);
-    if (!AST_SUPPORTED_EXTENSIONS.has(extension)) {
-      merged.skippedFiles++;
-      continue;
-    }
-    try {
-      const summary = collectAstFromFile(file.path, file.content);
-      merged.parsedFiles += summary.parsedFiles;
-      merged.nodes.push(...summary.nodes);
-      merged.edges.push(...summary.edges);
-    } catch {
-      merged.errors++;
-    }
-  }
-
-  const seen = new Set<string>();
-  merged.edges = merged.edges.filter((edge) => {
-    const key = `${edge.type}:${edge.filePath}:${edge.from}->${edge.to}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-
-  return merged;
-}
-
-function astSummaryForPrompt(ast: AstGraphSummary): string {
+function buildAstSummaryFromGraph(
+  graph: KnowledgeGraph,
+  stats: { parsedFiles: number; skippedFiles: number; errors: number }
+): string {
   const maxNodes = 120;
   const maxEdges = 200;
-  const nodeLines = ast.nodes.slice(0, maxNodes).map((node) => {
-    if (node.type === "class") {
-      const extendsText = node.superClass ? ` extends ${node.superClass}` : "";
-      return `[CLASS] ${node.name}${extendsText} @ ${node.filePath}`;
-    }
-    const params = node.params?.join(", ") || "";
-    return `[FUNCTION] ${node.name}(${params}) async=${Boolean(node.isAsync)} @ ${node.filePath}`;
-  });
 
-  const edgeLines = ast.edges.slice(0, maxEdges).map((edge) => {
-    return `${edge.from} -[${edge.type}]-> ${edge.to} @ ${edge.filePath}`;
-  });
+  const nodes = graph.getNodes();
+  const edges = graph.getEdges();
+
+  const nodeLines = nodes
+    .filter((n) => n.type === "class" || n.type === "function")
+    .slice(0, maxNodes)
+    .map((node) => {
+      if (node.type === "class") {
+        const extendsText = node.properties.superClass ? ` extends ${node.properties.superClass}` : "";
+        return `[CLASS] ${node.name}${extendsText} @ ${node.properties.filePath}`;
+      }
+      const params = node.properties.params?.join(", ") || "";
+      return `[FUNCTION] ${node.name}(${params}) async=${Boolean(node.properties.isAsync)} @ ${node.properties.filePath}`;
+    });
+
+  const edgeLines = edges
+    .slice(0, maxEdges)
+    .map((edge) => {
+      const filePathText = edge.properties?.filePath ? ` @ ${edge.properties.filePath}` : "";
+      return `${edge.from} -[${edge.type}]-> ${edge.to}${filePathText}`;
+    });
 
   return `AST Summary
-- parsedFiles: ${ast.parsedFiles}
-- skippedFiles: ${ast.skippedFiles}
-- parseErrors: ${ast.errors}
-- nodesFound: ${ast.nodes.length}
-- edgesFound: ${ast.edges.length}
+- parsedFiles: ${stats.parsedFiles}
+- skippedFiles: ${stats.skippedFiles}
+- parseErrors: ${stats.errors}
+- nodesFound: ${nodes.length}
+- edgesFound: ${edges.length}
 
 AST Nodes (truncated):
 ${nodeLines.join("\n") || "(none)"}
@@ -282,48 +105,7 @@ function loadMockArchitecture() {
   return JSON.parse(raw);
 }
 
-// ── Call Ollama ────────────────────────────────────────────────────
-async function callOllama(
-  systemPrompt: string,
-  userPrompt: string,
-  maxTokens = 4096,
-  jsonMode = false
-): Promise<string> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), OLLAMA_TIMEOUT_MS);
 
-  const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
-
-  try {
-    const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
-      signal: controller.signal,
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: OLLAMA_MODEL,
-        prompt: fullPrompt,
-        stream: false,
-        ...(jsonMode ? { format: "json" } : {}),
-        options: { temperature: jsonMode ? 0.3 : 0.7, num_predict: maxTokens },
-      }),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Ollama API error: ${response.status} - ${errText}`);
-    }
-
-    const data = await response.json();
-    const content = data.response;
-    if (!content) throw new Error("Empty response from AI");
-
-    return content.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
-  } catch (err) {
-    rethrowIfTimeout(err, OLLAMA_TIMEOUT_MS);
-  } finally {
-    clearTimeout(timeout);
-  }
-}
 
 // ── Generate architecture ──────────────────────────────────────────
 async function generateArchitecture(prompt: string, level: number, syntax: string) {
@@ -359,7 +141,10 @@ CRITICAL RULES:
 
 Autonomy: ${levelDesc}`;
 
-  const raw = await callOllama(systemPrompt, prompt, syntax !== "Hide Syntax" ? 6000 : 4096, true);
+  const raw = await apiHandler.createMessage(systemPrompt, prompt, {
+    maxTokens: syntax !== "Hide Syntax" ? 6000 : 4096,
+    jsonMode: true,
+  });
 
   try {
     const parsed = extractJsonFromResponse(raw);
@@ -393,7 +178,10 @@ RULES:
 Architecture:
 ${JSON.stringify(architecture, null, 2)}`;
 
-  const raw = await callOllama(systemPrompt, userPrompt, 4096);
+  const raw = await apiHandler.createMessage(systemPrompt, userPrompt, {
+    maxTokens: 4096,
+    jsonMode: false,
+  });
 
   try {
     const parsed = JSON.parse(raw);
@@ -502,118 +290,15 @@ async function analyzeCodebase(files: { path: string; content: string }[]) {
     return buildFileTreeArchitecture(files);
   }
 
-  const astGraph = buildAstGraphSummary(files);
-  const fileList = files.map((f) => `${f.path} (${f.content.length} chars)`).join("\n");
-  const codeSnippets = files
-    .slice(0, 15)
-    .map((f) => `--- ${f.path} ---\n${f.content.slice(0, 500)}`)
-    .join("\n\n");
+  // Clear and rebuild global graph
+  globalGraph.clear();
+  const stats = RepositoryParser.parseRepository(files, globalGraph);
 
-  const systemPrompt = `You are ArchitectOS.
-
-Convert the provided repository tree and code into a hierarchical architecture graph.
-
-Return ONLY valid JSON matching:
-
-{
-"id": "",
-"title": "",
-"description": "",
-"depth": 0,
-"type": "project|layer|module|component|file",
-"path": "",
-"code": "",
-"children": []
-}
-
-Rules:
-
-* Output exactly one JSON object.
-* No markdown, code fences, comments, explanations, or extra text.
-* Create a single root node representing the project.
-* Build hierarchy only from provided files, folders, modules, classes, routes, components, services, and subsystems.
-* Never invent architecture, folders, layers, or modules.
-* Preserve actual parent-child relationships.
-* Prefer logical architectural grouping when clearly supported by code.
-* Skip README, lockfiles, generated files, build artifacts, and cache folders.
-* Use concise titles based on actual repository names.
-* Descriptions must be factual and derived from code.
-* code must contain real code snippets copied from input only.
-* Maximum 20 lines of code per node.
-* Leave code empty if unavailable.
-* Infer patterns only when strongly evidenced:
-
-  * Route → Controller → Service
-  * Page → Component → Hook
-  * API → Middleware → Logic
-  * Repository → Model
-* Avoid duplicate nodes.
-* Merge closely related functionality when appropriate.
-* depth starts at 0 for root and increases by exactly 1 per level.
-* Small repos: depth 2-3
-* Medium repos: depth 3-4
-* Large repos: depth 4-5
-* Order children by architectural importance when obvious, otherwise preserve repository order.
-
-Every node must contain:
-
-id
-title
-description
-depth
-type
-path
-code
-children
-
-Validate before output:
-
-* valid JSON
-* single root
-* no duplicates
-* no hallucinated modules
-* consistent depth values
-* real code snippets only
-`;
-
-  const userPrompt = `File structure:\n${fileList}\n\nCode snippets:\n${codeSnippets}\n\n${astSummaryForPrompt(astGraph)}
-
-Use the AST summary as primary structural evidence for classes, functions, imports, exports, inheritance, and call relationships.`;
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), ANALYZE_TIMEOUT_MS);
   try {
-    const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
-      signal: controller.signal,
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: OLLAMA_MODEL,
-        prompt: `${systemPrompt}\n\n${userPrompt}`,
-        stream: false,
-        format: "json",
-        options: { temperature: 0.3, num_predict: 6000 },
-      }),
-    });
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Ollama error: ${response.status}. Ensure Ollama is running (ollama serve) and model ${OLLAMA_MODEL} is installed.`);
-    }
-    const data = await response.json();
-    const content = (data.response || "").replace(/^```json\s*/i, "").replace(/\s*```\s*$/i, "").trim();
-    if (!content) throw new Error("Empty response from AI");
-
-    try {
-      const parsed = extractJsonFromResponse(content);
-      return sanitizeNode(parsed);
-    } catch (e) {
-      console.error("Analyze JSON parse error:", content.slice(0, 500));
-      throw new Error("AI returned invalid JSON. Try fewer/smaller files or a different model.");
-    }
+    const result = await ArchitectureExtractor.extractArchitecture(files, globalGraph, stats, apiHandler);
+    return result;
   } catch (err) {
     rethrowIfTimeout(err, ANALYZE_TIMEOUT_MS);
-  } finally {
-    clearTimeout(timeout);
   }
 }
 
@@ -707,15 +392,27 @@ app.post("/ast-preview", (req, res) => {
   }
 
   try {
-    const ast = buildAstGraphSummary(files);
+    const tempGraph = new KnowledgeGraph();
+    const stats = RepositoryParser.parseRepository(files, tempGraph);
     return res.json({
-      ast,
-      promptSummary: astSummaryForPrompt(ast),
+      ast: {
+        nodes: tempGraph.getNodes(),
+        edges: tempGraph.getEdges(),
+      },
+      promptSummary: buildAstSummaryFromGraph(tempGraph, stats),
     });
   } catch (error: any) {
     console.error("[AST Preview] Error:", error.message);
     return res.status(500).json({ error: error.message || "Failed to build AST preview" });
   }
+});
+
+// Expose Knowledge Graph data to client
+app.get("/graph", (_req, res) => {
+  return res.json({
+    nodes: globalGraph.getNodes(),
+    edges: globalGraph.getEdges(),
+  });
 });
 
 // File structure
@@ -748,43 +445,26 @@ RULES:
     const chatHistory = (history || []).map((m: any) => `${m.role}: ${m.content}`).join("\n");
     const fullPrompt = `${systemPrompt}\n\nChat History:\n${chatHistory}\n\nUser: ${message}`;
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), NODE_CHAT_TIMEOUT_MS);
-
-    let response: Response;
     try {
-      response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
-        signal: controller.signal,
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: OLLAMA_MODEL,
-          prompt: fullPrompt,
-          stream: false,
-          format: "json",
-          options: { temperature: 0.7, num_predict: 2048 },
-        }),
+      const content = await apiHandler.createMessage("", fullPrompt, {
+        maxTokens: 2048,
+        jsonMode: true,
+        temperature: 0.7,
       });
+
+      const cleaned = content.replace(/^```json\s*/i, "").replace(/\s*```$/i, "").trim();
+
+      try {
+        const parsed = JSON.parse(cleaned);
+        return res.json({
+          reply: parsed.reply || parsed.answer || cleaned,
+          updatedNode: parsed.updatedNode || null,
+        });
+      } catch {
+        return res.json({ reply: cleaned, updatedNode: null });
+      }
     } catch (err) {
       rethrowIfTimeout(err, NODE_CHAT_TIMEOUT_MS);
-    } finally {
-      clearTimeout(timeout);
-    }
-
-    if (!response.ok) throw new Error("Ollama error");
-
-    const data = await response.json();
-    const content = data.response || "";
-    const cleaned = content.replace(/^```json\s*/i, "").replace(/\s*```$/i, "").trim();
-
-    try {
-      const parsed = JSON.parse(cleaned);
-      return res.json({
-        reply: parsed.reply || parsed.answer || cleaned,
-        updatedNode: parsed.updatedNode || null,
-      });
-    } catch {
-      return res.json({ reply: cleaned, updatedNode: null });
     }
   } catch (error: any) {
     return res.status(500).json({ error: error.message });

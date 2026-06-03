@@ -5,54 +5,79 @@
     <Sidebar />
     <div class="flex-1 relative flex flex-col">
       <!-- Toolbar -->
-      <div v-if="store.architecture && !store.loading" class="flex items-center gap-2 p-3 border-b border-white/5 bg-bg z-30 flex-wrap">
+      <div v-if="store.architecture && !store.loading" class="flex items-center gap-3 p-3.5 border-b border-borderMuted bg-surface z-30 flex-wrap">
         <button :class="readmeBtnClass" @click="onReadmeClick" :disabled="store.readmeLoading">
-          {{ store.readmeLoading ? '⏳ Generating...' : readmeBtnLabel }}
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <span>{{ store.readmeLoading ? 'Generating...' : readmeBtnLabel }}</span>
         </button>
-        <button class="toolbar-btn" @click="store.loadFileStructure()">📁 File Structure</button>
-        <button class="toolbar-btn bg-accent/10 border-accent/30 text-accent hover:text-white" @click="store.toggleCodeViewer()">
-          💻 Watch Code
+        <button class="toolbar-btn" @click="store.loadFileStructure()">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <span>File Structure</span>
         </button>
-        <button class="toolbar-btn" @click="downloadZip">📦 Download ZIP</button>
-        <button class="toolbar-btn" @click="triggerUpload">📤 Upload Codebase</button>
+        <button class="toolbar-btn" @click="store.toggleViewMode()">
+          <svg class="w-3.5 h-3.5 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+          <span>{{ store.viewMode === 'architecture' ? 'Show Code Dependency' : 'Show Logical Architecture' }}</span>
+        </button>
+        <button class="toolbar-btn bg-accentLight border border-accent/20 text-accent hover:bg-accentLight/60" @click="store.toggleCodeViewer()">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span>Watch Code</span>
+        </button>
+        <button class="toolbar-btn" @click="downloadZip">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Download ZIP</span>
+        </button>
+        <button class="toolbar-btn" @click="triggerUpload">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span>Upload Codebase</span>
+        </button>
 
         <div class="flex-1"></div>
-        <span class="text-[10px] text-textSecondary truncate max-w-[200px]">{{ store.lastPrompt }}</span>
+        <span class="text-[11px] font-mono font-bold text-textSecondary bg-bg border border-borderMuted rounded-none px-2.5 py-1 truncate max-w-[240px]">{{ store.lastPrompt }}</span>
       </div>
 
       <!-- Welcome screen -->
-      <div v-if="!store.architecture && !store.loading && !store.uploadLoading" class="flex-1 flex flex-col items-center justify-center gap-6">
-        <h1 class="text-4xl font-bold text-accent">ArchitectOS</h1>
-        <p class="text-textSecondary text-lg max-w-md text-center">
-          Describe any system and watch it decompose into an interactive architecture graph.
-        </p>
-        <div class="flex gap-2 w-[480px]">
-          <input v-model="prompt" @keyup.enter="submit" placeholder="e.g. Build an API Gateway with authentication" class="flex-1 bg-surface rounded-xl p-3 text-sm border border-white/5 focus:border-accent outline-none transition" />
-          <button class="bg-accent text-white px-6 rounded-xl font-medium hover:opacity-90 transition" @click="submit">Generate</button>
+      <div v-if="!store.architecture && !store.loading && !store.uploadLoading" class="flex-1 flex flex-col items-center justify-center gap-6 grid-dots relative overflow-hidden p-6 select-none">
+        <div class="flex flex-col items-center max-w-xl text-center z-10 space-y-3">
+          <h1 class="text-4xl font-extrabold tracking-tight text-textPrimary uppercase tracking-widest border-b-2 border-accent pb-2">ArchitectOS</h1>
+          <p class="text-textSecondary text-sm max-w-md leading-relaxed font-mono">
+            Decompose any backend, compiler, database or app idea into a fully-customizable interactive architecture graph.
+          </p>
         </div>
-        <div class="flex gap-2 mt-2 flex-wrap justify-center">
-          <button v-for="example in examples" :key="example" class="text-xs bg-surface px-3 py-1.5 rounded-lg text-textSecondary hover:text-white transition cursor-pointer" @click="prompt = example; submit()">{{ example }}</button>
+
+        <div class="w-full max-w-[500px] bg-surface border border-borderMuted p-1.5 rounded-none flex gap-2 z-10 focus-within:border-accent shadow-sm transition duration-150">
+          <input v-model="prompt" @keyup.enter="submit" placeholder="e.g., Design a high-throughput API gateway with Redis rate limiting" class="flex-1 bg-transparent px-3 py-2 text-sm outline-none placeholder:text-textSecondary/40 font-mono" />
+          <button class="bg-accent hover:bg-accent/90 text-white px-5 rounded-none font-bold text-xs transition duration-150 active:scale-[0.98]" @click="submit">Generate</button>
         </div>
-        <div class="mt-4 text-textSecondary text-sm">or</div>
-        <button class="bg-surface text-textSecondary px-4 py-2 rounded-xl text-sm hover:text-white transition border border-white/5" @click="triggerUpload">📤 Upload existing codebase to visualize</button>
-        <div v-if="store.history.length" class="mt-6 w-[480px]">
-          <p class="text-textSecondary text-xs mb-2">Recent:</p>
+
+        <div class="flex gap-2 max-w-lg mt-1 flex-wrap justify-center z-10">
+          <button v-for="example in examples" :key="example" class="text-xs bg-surface border border-borderMuted px-3 py-1.5 rounded-none text-textSecondary hover:text-textPrimary hover:bg-surfaceHover transition duration-150 cursor-pointer font-bold" @click="prompt = example; submit()">{{ example }}</button>
+        </div>
+
+        <div class="text-textSecondary/50 text-[10px] font-bold uppercase tracking-widest z-10 my-1">OR</div>
+
+        <button class="bg-surface hover:bg-surfaceHover border border-borderMuted text-textSecondary hover:text-textPrimary px-5 py-2.5 rounded-none text-xs font-bold tracking-wider uppercase transition duration-150 flex items-center gap-2 shadow-sm z-10" @click="triggerUpload">
+          <svg class="w-4 h-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span>Upload Codebase</span>
+        </button>
+
+        <div v-if="store.history.length" class="mt-4 w-[480px] z-10">
+          <p class="text-textSecondary/55 text-[9px] font-bold uppercase tracking-wider mb-2 font-mono">Recent Generations</p>
           <div class="flex flex-col gap-1">
-            <button v-for="h in store.history.slice(-5).reverse()" :key="h.timestamp" class="text-xs text-left bg-surface px-3 py-2 rounded-lg text-textSecondary hover:text-white transition truncate" @click="prompt = h.prompt; submit()">{{ h.prompt }}</button>
+            <button v-for="h in store.history.slice(-3).reverse()" :key="h.timestamp" class="text-xs text-left bg-surface border border-borderMuted px-4 py-2 rounded-none text-textSecondary hover:text-textPrimary hover:bg-surfaceHover transition truncate font-mono" @click="prompt = h.prompt; submit()">{{ h.prompt }}</button>
           </div>
         </div>
       </div>
 
       <!-- Loading -->
-      <div v-if="store.loading || store.uploadLoading" class="flex-1 flex flex-col items-center justify-center gap-4">
-        <div class="w-10 h-10 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
-        <p class="text-textSecondary">{{ store.uploadLoading ? 'Analyzing codebase...' : 'Generating architecture...' }}</p>
+      <div v-if="store.loading || store.uploadLoading" class="flex-1 flex flex-col items-center justify-center gap-5 grid-dots">
+        <div class="w-12 h-12 border-[3.5px] border-accent border-t-transparent rounded-full animate-spin shadow-sm"></div>
+        <p class="text-textSecondary text-sm font-semibold tracking-wide animate-pulse">{{ store.uploadLoading ? 'Analyzing codebase...' : 'Decomposing architecture...' }}</p>
       </div>
 
       <!-- Error -->
-      <div v-if="store.error && !store.loading" class="absolute top-16 left-1/2 -translate-x-1/2 bg-red-900/80 text-white px-4 py-2 rounded-xl text-sm z-50 flex items-center gap-2">
-        {{ store.error }}
-        <button @click="store.error = null" class="text-white/60 hover:text-white">✕</button>
+      <div v-if="store.error && !store.loading" class="absolute top-20 left-1/2 -translate-x-1/2 bg-red-50 border border-red-200 text-red-700 px-4 py-2.5 rounded-none text-xs z-50 flex items-center gap-3 shadow-lg">
+        <span>{{ store.error }}</span>
+        <button @click="store.error = null" class="text-red-900 hover:text-red-700 transition font-bold">✕</button>
       </div>
 
       <!-- Graph -->
@@ -196,6 +221,6 @@ const downloadZip = async () => {
 </script>
 
 <style>
-.toolbar-btn { @apply text-xs bg-surface px-3 py-1.5 rounded-lg text-textSecondary hover:text-white transition border border-white/5; }
-.toolbar-btn-stale { @apply border-red-500/50 text-red-400; }
+.toolbar-btn { @apply text-xs bg-surface hover:bg-surfaceHover px-3.5 py-2 rounded-none text-textSecondary hover:text-textPrimary transition-all border border-borderMuted flex items-center gap-1.5 shadow-sm font-bold duration-150; }
+.toolbar-btn-stale { @apply border-red-900/35 text-red-400 bg-red-950/20 hover:bg-red-950/40; }
 </style>

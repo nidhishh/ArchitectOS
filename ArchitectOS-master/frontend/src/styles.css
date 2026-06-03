@@ -1,24 +1,141 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
   color-scheme: dark;
-  font-family: Inter, system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
 }
 
 body {
-  background: #0f1117;
+  background: #0b0c10;
+  color: #f3f4f6;
   margin: 0;
+  overflow: hidden;
 }
 
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #16181d;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2c35;
+  border-radius: 0px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3e4152;
+}
+
+/* Flat UI Container Card Styles (Replacing glassmorphism) */
 .glass {
-  background: rgba(21, 25, 34, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: #16181d;
+  border: 1px solid #2a2c35;
 }
 
+.glass-card {
+  background: #16181d;
+  border: 1px solid #2a2c35;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.glass-card:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.glass-modal {
+  background: #16181d;
+  border: 1px solid #2a2c35;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+}
+
+/* Grid background */
 .grid-dots {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 24px 24px;
+  background-image: radial-gradient(#2a2c35 1.2px, transparent 1.2px);
+  background-size: 20px 20px;
+  background-color: #0b0c10;
+}
+
+/* Glowing text removed (regular accent colored shadow / plain text instead) */
+.glow-text-accent {
+  text-shadow: none;
+}
+
+/* Vue Flow Custom overrides */
+.vue-flow__edge-path {
+  stroke: #444444;
+  stroke-width: 2;
+  transition: stroke 0.15s, stroke-width 0.15s;
+}
+
+.vue-flow__edge.selected .vue-flow__edge-path {
+  stroke: #3b82f6;
+  stroke-width: 2.5;
+}
+
+.vue-flow__edge:hover .vue-flow__edge-path {
+  stroke: #3b82f6;
+  stroke-width: 2.5;
+}
+
+.vue-flow__minimap {
+  background: #16181d !important;
+  border: 1px solid #2a2c35 !important;
+  border-radius: 0px !important;
+  overflow: hidden;
+}
+
+.vue-flow__controls {
+  display: flex;
+  flex-direction: row;
+  background: #16181d !important;
+  border: 1px solid #2a2c35 !important;
+  border-radius: 0px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  padding: 2px !important;
+}
+
+.vue-flow__controls-button {
+  background: transparent !important;
+  border: none !important;
+  border-right: 1px solid #2a2c35 !important;
+  fill: #9ca3af !important;
+  width: 26px !important;
+  height: 26px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s !important;
+}
+
+.vue-flow__controls-button:last-child {
+  border-right: none !important;
+}
+
+.vue-flow__controls-button:hover {
+  background: #21242c !important;
+  fill: #f3f4f6 !important;
+}
+
+.vue-flow__handle {
+  width: 8px !important;
+  height: 8px !important;
+  background: #16181d !important;
+  border: 2px solid #9ca3af !important;
+  border-radius: 0px !important; /* Sharp handles for enterprise styling */
+  transition: transform 0.15s;
+}
+
+.vue-flow__handle:hover {
+  transform: scale(1.3);
 }

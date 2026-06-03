@@ -4,15 +4,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg: "#0F1117",
-        surface: "#151922",
-        accent: "#4F8CFF",
-        accent2: "#8A63FF",
-        textPrimary: "#FFFFFF",
-        textSecondary: "#A1A7B3",
+        bg: "#0b0c10",             // Dark blueprint-style page background
+        surface: "#16181d",        // Dark charcoal container surface
+        surfaceHover: "#21242c",   // Lighter dark gray for hovered controls
+        accent: "#3b82f6",         // Vibrant enterprise blue
+        accentLight: "#1e293b",    // Deep navy blue zone/message highlight
+        textPrimary: "#f3f4f6",    // Off-white primary text
+        textSecondary: "#9ca3af",  // Medium slate gray secondary text
+        borderMuted: "#2a2c35",    // Clean, dark gray border
       },
       borderRadius: {
-        xl: "16px",
+        xl: "0px",                 // Sharp rectangular boxes for enterprise diagrams
       },
     },
   },

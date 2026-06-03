@@ -96,8 +96,9 @@ function layoutTree(root: ArchNode, nodes: Node[], edges: Edge[]) {
         id: `${parentId}->${node.id}`,
         source: parentId,
         target: node.id,
+        type: "step",
         animated: true,
-        style: { stroke: "#4F8CFF", strokeWidth: 2 },
+        style: { stroke: "#757575", strokeWidth: 2 },
       });
     }
 
@@ -116,4 +117,86 @@ function layoutTree(root: ArchNode, nodes: Node[], edges: Edge[]) {
   }
 
   place(root, 0, totalWidth, 0);
+}
+
+export function buildDependencyGraph(rawNodes: any[], rawEdges: any[]) {
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+
+  const fileNodes = rawNodes.filter((n) => n.type === "file");
+  const classNodes = rawNodes.filter((n) => n.type === "class");
+  const functionNodes = rawNodes.filter((n) => n.type === "function");
+
+  const colWidth = 360;
+  const rowHeight = 130;
+
+  // Helper for path basename
+  const pathBasename = (p: string): string => {
+    const parts = p.replace(/\\/g, "/").split("/");
+    return parts[parts.length - 1];
+  };
+
+  // Position Files
+  fileNodes.forEach((node, idx) => {
+    nodes.push({
+      id: node.id,
+      position: { x: 50, y: idx * rowHeight },
+      type: "card",
+      data: {
+        title: node.name,
+        description: `File: ${node.id}`,
+        code: "",
+      },
+    });
+  });
+
+  // Position Classes
+  classNodes.forEach((node, idx) => {
+    nodes.push({
+      id: node.id,
+      position: { x: 50 + colWidth, y: idx * rowHeight },
+      type: "card",
+      data: {
+        title: node.name,
+        description: `Class defined in ${pathBasename(node.properties?.filePath || "")}`,
+        code: node.properties?.methods?.join("\n") || "",
+      },
+    });
+  });
+
+  // Position Functions
+  functionNodes.forEach((node, idx) => {
+    nodes.push({
+      id: node.id,
+      position: { x: 50 + colWidth * 2, y: idx * rowHeight },
+      type: "card",
+      data: {
+        title: node.name,
+        description: `Function defined in ${pathBasename(node.properties?.filePath || "")}`,
+        code: node.properties?.params?.length
+          ? `Parameters: ${node.properties.params.join(", ")}`
+          : "No parameters",
+      },
+    });
+  });
+
+  // Map edges
+  rawEdges.forEach((edge, idx) => {
+    let color = "#1a73e8"; // Blue for imports/extends
+    if (edge.type === "calls") color = "#ec4899"; // Pink for calls
+    if (edge.type === "defines") color = "#10b981"; // Green for definitions
+    if (edge.type === "exports") color = "#8b5cf6"; // Purple for exports
+
+    edges.push({
+      id: `edge-${idx}`,
+      source: edge.from,
+      target: edge.to,
+      type: "step",
+      animated: edge.type === "calls",
+      label: edge.type,
+      style: { stroke: color, strokeWidth: 1.5 },
+    });
+  });
+
+  return { nodes, edges };
 }

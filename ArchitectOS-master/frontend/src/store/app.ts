@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
-import { generateArchitecture, generateReadme, getFileStructure, analyzeCodebase } from "../services/api";
-import { buildGraph, type ArchNode } from "../services/graph";
+import { generateArchitecture, generateReadme, getFileStructure, analyzeCodebase, getGraphData } from "../services/api";
+import { buildGraph, buildDependencyGraph, type ArchNode } from "../services/graph";
 
 function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
@@ -74,6 +74,7 @@ export const useAppStore = defineStore("app", {
       codeViewerVisible: false,
       // Node AI
       activeAINodeId: null as string | null,
+      viewMode: (saved?.viewMode ?? "architecture") as "architecture" | "dependency",
     };
   },
   actions: {
@@ -89,15 +90,34 @@ export const useAppStore = defineStore("app", {
         readme: this.readme,
         fileStructure: this.fileStructure,
         history: this.history.slice(-20),
+        viewMode: this.viewMode,
       });
     },
 
-    _rebuildGraph() {
+    async _rebuildGraph() {
       if (!this.architecture) return;
-      const { nodes, edges, focusPath } = buildGraph(this.architecture, this.focusId || undefined);
-      this.nodes = nodes;
-      this.edges = edges;
-      this.breadcrumbs = focusPath;
+      if (this.viewMode === "dependency") {
+        try {
+          const rawGraph = await getGraphData();
+          const { nodes, edges } = buildDependencyGraph(rawGraph.nodes, rawGraph.edges);
+          this.nodes = nodes;
+          this.edges = edges;
+          this.breadcrumbs = [];
+        } catch (err) {
+          console.error("Failed to build dependency graph:", err);
+        }
+      } else {
+        const { nodes, edges, focusPath } = buildGraph(this.architecture, this.focusId || undefined);
+        this.nodes = nodes;
+        this.edges = edges;
+        this.breadcrumbs = focusPath;
+      }
+    },
+
+    async toggleViewMode() {
+      this.viewMode = this.viewMode === "architecture" ? "dependency" : "architecture";
+      await this._rebuildGraph();
+      this._persist();
     },
 
     // ── Generate ─────────────────────────────────────────────────
