@@ -1,100 +1,262 @@
 # ArchitectOS
 
-Welcome to **ArchitectOS** – a modern, architecture-focused operating system interface built with Vue and TypeScript.
+> Understand any codebase in minutes.
 
-## Overview
+ArchitectOS is an **AI-powered Architecture Intelligence Platform** that transforms repositories into architecture knowledge. Instead of generating code, ArchitectOS analyzes software systems and automatically produces architecture diagrams, dependency graphs, service maps, data flow visualizations, and comprehensive system documentation.
 
-ArchitectOS is a sophisticated web-based OS interface designed with clean architecture principles and modern web technologies. It provides an intuitive user experience with a focus on design and performance.
-
-## Tech Stack
-
-- **Vue 3** (48.5%) - Progressive JavaScript framework for building user interfaces
-- **TypeScript** (47.8%) - Typed superset of JavaScript for robust development
-- **CSS** (2.6%) - Styling and design system
-- **Other** (1.1%) - Additional dependencies and utilities
-
-## Features
-
-- 🎨 Modern, responsive UI design
-- ⚡ Built with Vue 3 for optimal performance
-- 🔒 Type-safe development with TypeScript
-- 🎯 Architecture-driven design approach
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js (v14 or higher)
-- npm or yarn
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/nidhishh/ArchitectOS.git
-
-# Navigate to the project directory
-cd ArchitectOS
-
-# Install dependencies
-npm install
-# or
-yarn install
-```
-
-### Development
-
-```bash
-# Start the development server
-npm run dev
-# or
-yarn dev
-```
-
-The application will be available at `http://localhost:5173` (or another port if 5173 is in use).
-
-### Build
-
-```bash
-# Build for production
-npm run build
-# or
-yarn build
-```
-
-## Project Structure
-
-```
-ArchitectOS/
-├── src/
-│   ├── components/     # Vue components
-│   ├── views/         # Page views
-│   ├── types/         # TypeScript type definitions
-│   ├── styles/        # Global styles
-│   └── main.ts        # Application entry point
-├── public/            # Static assets
-├── package.json       # Project dependencies
-└── README.md          # This file
-```
-
-## Contributing
-
-Contributions are welcome! To contribute:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/your-feature`)
-3. Commit your changes (`git commit -m 'Add some feature'`)
-4. Push to the branch (`git push origin feature/your-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Support
-
-For issues, questions, or suggestions, please open an [issue](https://github.com/nidhishh/ArchitectOS/issues) on GitHub.
+**Upload a repository and get instant insights into how your system actually works.**
 
 ---
 
-**Made with ❤️ by [nidhishh](https://github.com/nidhishh) and [thatdepartedkid](https://github.com/thatdepartedkid)**
+## 🎯 Why ArchitectOS?
+
+Modern software systems are becoming increasingly complex. Developers spend countless hours trying to understand:
+
+- 🔍 Where business logic lives
+- 🔗 How services communicate
+- 🔐 Authentication flows
+- 💾 Database interactions
+- 📡 API dependencies
+- ⚡ Event-driven architectures
+- 🏛️ Legacy system architecture
+
+While current AI coding tools focus on **generating code**, ArchitectOS focuses on **understanding code**.
+
+---
+
+## 🚀 Core Features
+
+### 📊 Repository Intelligence
+Automatically analyze and index your entire codebase:
+- Files and directory structures
+- Functions and methods
+- Classes and interfaces
+- APIs and endpoints
+- Database models and queries
+- Components and services
+- Import dependencies
+
+### 🧠 Knowledge Graph Generation
+Build a semantic graph representation of your repository:
+```
+Service A
+   ↓
+API Layer
+   ↓
+Database
+```
+
+Track relationships including:
+- Import statements
+- Function calls
+- Dependencies
+- Inheritance hierarchies
+- API usage patterns
+- Database access
+
+### 🔍 Semantic Repository Search
+Ask natural language questions about your architecture:
+```
+"Explain the authentication flow"
+"How are payments processed?"
+"Show all database interactions"
+"What services use Redis?"
+```
+
+### 🏗️ Architecture Extraction
+Automatically identify architectural patterns:
+- Monolithic vs. microservices
+- Bounded contexts and domains
+- Layered architectures
+- Event-driven systems
+- Service boundaries and interactions
+
+### 📈 Visualization & Diagrams
+Generate comprehensive visual representations:
+- System architecture diagrams
+- Service dependency maps
+- Data flow diagrams
+- Dependency graphs
+- Interactive architecture explorer
+
+---
+
+## 🔄 How It Works
+
+ArchitectOS combines repository parsing, graph analysis, semantic retrieval, and large language models:
+
+```
+Repository Upload
+       ↓
+Repository Scanner (Framework & Dependency Detection)
+       ↓
+AST Parsing Engine (Tree-sitter)
+       ↓
+Knowledge Graph Builder (Node Extraction & Relationships)
+       ├────────► Embedding Engine (Vector Generation)
+       ↓
+Architecture Extraction (Pattern Recognition)
+       ↓
+Context Builder (Graph + Semantic Retrieval)
+       ↓
+LLM Analysis (Claude/GPT/Gemini)
+       ↓
+Architecture Intelligence (Insights & Documentation)
+```
+
+---
+
+## 🛠️ Technical Architecture
+
+### Components
+
+**Repository Scanner**
+- Discovers files, frameworks, dependencies, and project structure
+- Detects technology stack and patterns
+
+**Parsing Engine** (Powered by Tree-sitter)
+- Language support: TypeScript, JavaScript, Python, Go, Java, Rust
+- Extracts AST for semantic analysis
+
+**Knowledge Graph** (Neo4j)
+- Models files, functions, classes, services, APIs, and databases
+- Stores and queries relationships
+
+**Semantic Search** (Qdrant)
+- Vector embeddings for efficient retrieval
+- Natural language architecture queries without loading entire repos
+
+**Context Builder**
+- Combines semantic retrieval with dependency traversal
+- Constructs architecture-aware context for LLMs
+
+**AI Integration**
+- Supports Claude, GPT, Gemini, and Ollama
+- Generates insights, documentation, and recommendations
+
+### Tech Stack
+
+**Backend**
+- Node.js with TypeScript
+- Fastify (high-performance web framework)
+
+**Parsing**
+- Tree-sitter for AST extraction
+
+**Knowledge Graph**
+- Neo4j for relationship modeling
+
+**Vector Search**
+- Qdrant for semantic search
+
+**AI/ML**
+- Claude, GPT, Gemini, Ollama
+
+**Frontend**
+- Next.js + React
+- TailwindCSS for styling
+
+**Language Composition**
+- Vue: 48.5%
+- TypeScript: 47.8%
+- CSS: 2.6%
+- Other: 1.1%
+
+---
+
+## 📋 Roadmap
+
+### Phase 1: Repository Parsing
+- [ ] Repository ingestion and scanning
+- [ ] AST extraction
+- [ ] Framework detection
+
+### Phase 2: Knowledge Graph
+- [ ] Dependency graph generation
+- [ ] Function relationship mapping
+- [ ] Service boundary detection
+
+### Phase 3: Semantic Search
+- [ ] Vector embeddings
+- [ ] Semantic search engine
+- [ ] Context retrieval pipeline
+
+### Phase 4: Architecture Intelligence
+- [ ] Pattern recognition and extraction
+- [ ] System-level understanding
+- [ ] Architectural reasoning
+
+### Phase 5: Visualization
+- [ ] Interactive dependency explorer
+- [ ] Dynamic architecture graphs
+- [ ] Real-time data flow diagrams
+
+### Phase 6: Enterprise Scale
+- [ ] Monorepo support
+- [ ] Incremental indexing
+- [ ] Support for million-line repositories
+
+---
+
+## 🎓 Vision
+
+ArchitectOS aims to become the **operating system for software architecture**:
+
+```
+Repository
+    ↓
+Repository Intelligence
+    ↓
+Knowledge Graph
+    ↓
+Architecture Extraction
+    ↓
+Visual Understanding
+```
+
+Just as GitHub became the platform for storing code and Cline for generating code, **ArchitectOS aims to become the platform for understanding software architecture**.
+
+### Key Questions ArchitectOS Answers
+- ❓ How does authentication work?
+- ❓ Which services depend on this database?
+- ❓ What breaks if this module changes?
+- ❓ Where is payment processing implemented?
+- ❓ How does data flow through the system?
+- ❓ What are the system's architectural boundaries?
+
+---
+
+## 🚦 Current Status
+
+ArchitectOS is currently **under active development**. 
+
+Contributions, ideas, and feedback are welcome! If you're interested in:
+- 🧠 Repository intelligence
+- 📊 Knowledge graphs
+- 🏗️ Software architecture
+- 🤖 AI agents
+- 👨‍💻 Developer tools
+
+We'd love to collaborate. Feel free to open issues, submit pull requests, or reach out with ideas.
+
+---
+
+## 📝 License
+
+[Add your license here]
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+---
+
+## 📧 Contact & Support
+
+For questions, suggestions, or collaboration opportunities, please open an issue or reach out through GitHub.
+
+---
+
+Made with ❤️ by [nidhishh](https://github.com/nidhishh) and [thatdepartedkid](https://github.com/thatdepartedkid)
