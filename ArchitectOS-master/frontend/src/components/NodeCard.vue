@@ -1,5 +1,5 @@
 <template>
-  <Handle type="target" :position="Position.Top" style="visibility: hidden" />
+  <Handle type="target" :position="Position.Left" style="visibility: hidden" />
   <div
     class="border-2 p-3 min-w-[210px] max-w-[280px] shadow-sm font-sans text-left transition-all duration-150 rounded-none"
     :class="[categoryColorClass.border, categoryColorClass.bg, isEditing ? 'ring-2 ring-[#ff9900]' : '']"
@@ -97,7 +97,7 @@
       </div>
     </template>
   </div>
-  <Handle type="source" :position="Position.Bottom" style="visibility: hidden" />
+  <Handle type="source" :position="Position.Right" style="visibility: hidden" />
 </template>
 
 <script setup lang="ts">

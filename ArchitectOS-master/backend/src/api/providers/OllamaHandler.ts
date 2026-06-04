@@ -12,7 +12,7 @@ export class OllamaHandler implements ApiHandler {
   async createMessage(systemPrompt: string, userPrompt: string, options?: ApiHandlerOptions): Promise<string> {
     const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
     const model = options?.model || this.defaultModel;
-    
+
     const response = await fetch(`${this.baseUrl}/api/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -21,9 +21,9 @@ export class OllamaHandler implements ApiHandler {
         prompt: fullPrompt,
         stream: false,
         ...(options?.jsonMode ? { format: "json" } : {}),
-        options: { 
-          temperature: options?.temperature ?? (options?.jsonMode ? 0.3 : 0.7), 
-          num_predict: options?.maxTokens || 4096 
+        options: {
+          temperature: options?.temperature ?? (options?.jsonMode ? 0.3 : 0.7),
+          num_predict: options?.maxTokens || 4096
         },
       }),
     });

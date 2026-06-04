@@ -79,7 +79,7 @@ Rules:
     try {
       const parsed = this.extractJsonFromResponse(content);
       const sanitized = this.sanitizeNode(parsed);
-      
+
       // Step 2: Validate and Repair (Ensure all files in graph are accounted for)
       this.repairMissingFiles(sanitized, files);
 

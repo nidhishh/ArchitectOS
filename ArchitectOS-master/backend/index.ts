@@ -474,7 +474,7 @@ RULES:
 // Health
 app.get("/health", async (_req, res) => {
   let ollamaOk = false;
-  try { const r = await fetch(`${OLLAMA_BASE_URL}/api/tags`); ollamaOk = r.ok; } catch {}
+  try { const r = await fetch(`${OLLAMA_BASE_URL}/api/tags`); ollamaOk = r.ok; } catch { }
   res.json({ status: "ok", ai: AI_ENABLED, ollama: ollamaOk, model: OLLAMA_MODEL });
 });
 

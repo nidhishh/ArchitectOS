@@ -45,7 +45,11 @@ export function buildGraph(root: any, focusId?: string) {
     if (found) renderRoot = found;
   }
 
-  layoutTree(renderRoot, nodes, edges);
+  if (!focusId) {
+    layoutProjectOverview(safe, nodes, edges);
+  } else {
+    layoutDrillDown(renderRoot, nodes, edges);
+  }
 
   return { nodes, edges, focusPath };
 }
@@ -70,25 +74,113 @@ function findPath(node: ArchNode, targetId: string, path: ArchNode[]): boolean {
 }
 
 /**
- * Tree layout: uses leaf count to allocate horizontal space proportionally.
- * This prevents overlap even for unbalanced trees.
+ * Project Overview layout: places Root on the left and subsystems in horizontal container columns.
  */
-function layoutTree(root: ArchNode, nodes: Node[], edges: Edge[]) {
+function layoutProjectOverview(root: ArchNode, nodes: Node[], edges: Edge[]) {
+  const subsystems = root.children || [];
+  const CARD_GAP = 20;
+  const HEADER_HEIGHT = 80;
+  const CONTAINER_WIDTH = 280;
+  const CARD_WIDTH = 240;
+  const CARD_X_OFFSET = 20;
+  const CONTAINER_GAP = 125;
+
+  let maxContainerHeight = 160;
+  const containerHeights = subsystems.map((subsystem) => {
+    let currentY = HEADER_HEIGHT;
+    (subsystem.children || []).forEach((file) => {
+      const cardHeight = file.code ? 180 : 115;
+      currentY += cardHeight + CARD_GAP;
+    });
+    const height = Math.max(160, currentY + 10);
+    if (height > maxContainerHeight) maxContainerHeight = height;
+    return height;
+  });
+
+  const centerY = maxContainerHeight / 2 + 50;
+
+  // Place Project Node
+  nodes.push({
+    id: root.id,
+    position: { x: 50, y: centerY - 60 },
+    type: "card",
+    data: { title: root.title, description: root.description, code: root.code || "" },
+    style: { width: "240px" }
+  });
+
+  // Place Subsystems and Files
+  let currentX = 380;
+  subsystems.forEach((subsystem, idx) => {
+    const containerHeight = containerHeights[idx];
+    const subsystemY = centerY - containerHeight / 2;
+
+    nodes.push({
+      id: subsystem.id,
+      position: { x: currentX, y: subsystemY },
+      type: "container",
+      data: { title: subsystem.title, description: subsystem.description },
+      style: { width: `${CONTAINER_WIDTH}px`, height: `${containerHeight}px` }
+    });
+
+    edges.push({
+      id: `${root.id}->${subsystem.id}`,
+      source: root.id,
+      target: subsystem.id,
+      type: "step",
+      animated: true,
+      style: { stroke: "#3b82f6", strokeWidth: 2 },
+    });
+
+    if (idx > 0) {
+      edges.push({
+        id: `flow-${subsystems[idx - 1].id}->${subsystem.id}`,
+        source: subsystems[idx - 1].id,
+        target: subsystem.id,
+        type: "step",
+        animated: true,
+        style: { stroke: "#8b5cf6", strokeWidth: 3 },
+      });
+    }
+
+    let currentY = HEADER_HEIGHT;
+    (subsystem.children || []).forEach((file) => {
+      const cardHeight = file.code ? 180 : 115;
+      nodes.push({
+        id: file.id,
+        parentNode: subsystem.id,
+        position: { x: CARD_X_OFFSET, y: currentY },
+        type: "card",
+        data: { title: file.title, description: file.description, code: file.code || "" },
+        style: { width: `${CARD_WIDTH}px` }
+      });
+      currentY += cardHeight + CARD_GAP;
+    });
+
+    currentX += CONTAINER_WIDTH + CONTAINER_GAP;
+  });
+}
+
+/**
+ * Focused Subtree layout: places root on left and children in horizontal tree.
+ */
+function layoutDrillDown(root: ArchNode, nodes: Node[], edges: Edge[]) {
   const NODE_WIDTH = 240;
-  const H_GAP = 40;
-  const V_GAP = 200;
+  const H_GAP = 180;
+  const V_GAP = 30;
 
   const totalLeaves = countLeaves(root);
-  const totalWidth = totalLeaves * (NODE_WIDTH + H_GAP);
+  const totalHeight = totalLeaves * 150;
 
-  function place(node: ArchNode, x: number, width: number, y: number, parentId?: string) {
-    const cx = x + width / 2 - NODE_WIDTH / 2;
+  function place(node: ArchNode, y: number, height: number, x: number, parentId?: string) {
+    const cardHeight = node.code ? 180 : 115;
+    const cy = y + height / 2 - cardHeight / 2;
 
     nodes.push({
       id: node.id,
-      position: { x: cx, y },
+      position: { x, y: cy },
       type: "card",
       data: { title: node.title, description: node.description, code: node.code || "" },
+      style: { width: `${NODE_WIDTH}px` }
     });
 
     if (parentId) {
@@ -108,15 +200,15 @@ function layoutTree(root: ArchNode, nodes: Node[], edges: Edge[]) {
     const childLeaves = children.map(countLeaves);
     const totalChildLeaves = childLeaves.reduce((a, b) => a + b, 0);
 
-    let offsetX = x;
+    let offsetY = y;
     children.forEach((child, i) => {
-      const childWidth = (childLeaves[i] / totalChildLeaves) * width;
-      place(child, offsetX, childWidth, y + V_GAP, node.id);
-      offsetX += childWidth;
+      const childHeight = (childLeaves[i] / totalChildLeaves) * height;
+      place(child, offsetY, childHeight, x + NODE_WIDTH + H_GAP, node.id);
+      offsetY += childHeight;
     });
   }
 
-  place(root, 0, totalWidth, 0);
+  place(root, 50, totalHeight, 50);
 }
 
 export function buildDependencyGraph(rawNodes: any[], rawEdges: any[]) {

@@ -46,13 +46,14 @@ import { MiniMap } from "@vue-flow/minimap";
 import { Controls } from "@vue-flow/controls";
 import { useAppStore } from "../store/app";
 import NodeCard from "./NodeCard.vue";
+import ContainerNode from "./ContainerNode.vue";
 
 const store = useAppStore();
 
 const flowNodes = computed(() => store.nodes);
 const flowEdges = computed(() => store.edges);
 const breadcrumbs = computed(() => store.breadcrumbs);
-const nodeTypes = { card: NodeCard };
+const nodeTypes = { card: NodeCard, container: ContainerNode };
 
 const onNodeClick = (event: any) => {
   const nodeId = event.node?.id;
