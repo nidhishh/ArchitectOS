@@ -1,5 +1,14 @@
 <template>
-  <aside class="w-[300px] h-full p-5 bg-surface flex flex-col gap-6 border-r border-borderMuted overflow-y-auto z-40 select-none font-sans">
+  <aside
+    class="relative h-full bg-surface z-40 select-none font-sans flex flex-col transition-all duration-300 ease-in-out"
+    :class="store.sidebarCollapsed ? 'border-r-0' : 'border-r border-borderMuted'"
+    :style="{
+      width: (store.sidebarCollapsed ? 0 : store.sidebarWidth) + 'px',
+      minWidth: (store.sidebarCollapsed ? 0 : store.sidebarWidth) + 'px',
+      maxWidth: (store.sidebarCollapsed ? 0 : store.sidebarWidth) + 'px'
+    }"
+  >
+    <div v-show="!store.sidebarCollapsed" class="flex-1 flex flex-col gap-6 p-5 overflow-y-auto w-full h-full">
     <!-- Header -->
     <div class="bg-bg border border-borderMuted p-4 rounded-none flex items-center justify-between">
       <div>
@@ -118,12 +127,49 @@
 
     <div class="flex-1"></div>
 
+    <!-- Stop Generation -->
+    <button
+      v-if="store.loading || store.uploadLoading"
+      class="bg-[#7f1d1d]/30 text-red-400 py-2.5 rounded-none hover:bg-red-900/40 hover:text-red-300 border border-red-500/30 transition duration-150 text-xs font-bold uppercase tracking-widest mb-2 flex items-center justify-center gap-2"
+      @click="store.stopGeneration()"
+    >
+      <span class="relative flex h-2 w-2">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+      </span>
+      Stop Generation
+    </button>
+
     <!-- Reset -->
     <button
       class="bg-surface text-textSecondary py-2.5 rounded-none hover:text-red-400 hover:bg-red-950/20 hover:border-red-500/25 border border-borderMuted transition duration-150 text-xs font-bold uppercase tracking-widest"
       @click="store.reset()"
     >
       Reset Engine
+    </button>
+    </div>
+
+    <!-- Drag Handle -->
+    <div
+      v-if="!store.sidebarCollapsed"
+      class="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-accent/40 active:bg-accent/60 transition-colors z-50 group flex items-center justify-center"
+      @mousedown="startResize"
+    >
+      <div class="w-[1px] h-full bg-borderMuted/30 group-hover:bg-accent/80 group-active:bg-accent transition-colors"></div>
+    </div>
+
+    <!-- Toggle Collapse Button -->
+    <button
+      class="absolute top-1/2 z-50 w-5 h-10 bg-surface border border-borderMuted hover:border-accent hover:text-accent flex items-center justify-center text-textSecondary cursor-pointer transition-all duration-300 -translate-y-1/2"
+      :class="store.sidebarCollapsed ? 'left-full rounded-r border-l-0' : 'left-full -translate-x-1/2 rounded'"
+      @click.stop="toggleCollapse"
+    >
+      <svg v-if="store.sidebarCollapsed" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6" />
+      </svg>
+      <svg v-else class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6" />
+      </svg>
     </button>
   </aside>
 </template>
@@ -161,4 +207,37 @@ function getMaxDepth(node: any): number {
 
 const nodeCount = computed(() => countNodes(store.architecture));
 const maxDepth = computed(() => getMaxDepth(store.architecture));
+
+const startResize = (e: MouseEvent) => {
+  e.preventDefault();
+  const startX = e.clientX;
+  const startWidth = store.sidebarWidth;
+
+  // Set global body styling during drag to keep mouse cursor consistent and prevent text selection
+  document.body.style.cursor = "col-resize";
+  document.body.style.userSelect = "none";
+
+  const doDrag = (moveEvent: MouseEvent) => {
+    const newWidth = startWidth + (moveEvent.clientX - startX);
+    if (newWidth >= 240 && newWidth <= 500) {
+      store.sidebarWidth = newWidth;
+    }
+  };
+
+  const stopDrag = () => {
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+    window.removeEventListener("mousemove", doDrag);
+    window.removeEventListener("mouseup", stopDrag);
+    store._persist();
+  };
+
+  window.addEventListener("mousemove", doDrag);
+  window.addEventListener("mouseup", stopDrag);
+};
+
+const toggleCollapse = () => {
+  store.sidebarCollapsed = !store.sidebarCollapsed;
+  store._persist();
+};
 </script>

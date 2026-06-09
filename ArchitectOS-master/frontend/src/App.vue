@@ -22,9 +22,17 @@
           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
           <span>Watch Code</span>
         </button>
+        <button class="toolbar-btn" :class="{ 'bg-accentLight/30 text-accent border-accent/25': store.promptPanelVisible }" @click="store.togglePromptPanel()">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span>Prompt Panel</span>
+        </button>
         <button class="toolbar-btn" @click="downloadZip">
           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           <span>Download ZIP</span>
+        </button>
+        <button v-if="inVsCode" class="toolbar-btn bg-accentLight/30 border border-accent/25 text-accent hover:bg-accentLight/60" @click="decomposeActiveWorkspace">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <span>Analyze Workspace</span>
         </button>
         <button class="toolbar-btn" @click="triggerUpload">
           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -55,6 +63,11 @@
 
         <div class="text-textSecondary/50 text-[10px] font-bold uppercase tracking-widest z-10 my-1">OR</div>
 
+        <button v-if="inVsCode" class="bg-accentLight/30 border border-accent/25 hover:bg-accentLight/60 text-accent px-5 py-2.5 rounded-none text-xs font-bold tracking-wider uppercase transition duration-150 flex items-center gap-2 shadow-sm z-10 mb-2" @click="decomposeActiveWorkspace">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <span>Decompose Active Workspace</span>
+        </button>
+
         <button class="bg-surface hover:bg-surfaceHover border border-borderMuted text-textSecondary hover:text-textPrimary px-5 py-2.5 rounded-none text-xs font-bold tracking-wider uppercase transition duration-150 flex items-center gap-2 shadow-sm z-10" @click="triggerUpload">
           <svg class="w-4 h-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           <span>Upload Codebase</span>
@@ -83,7 +96,7 @@
       <!-- Graph -->
       <div v-if="store.architecture && !store.loading" class="flex-1 relative">
         <GraphCanvas />
-        <PromptPanel />
+        <PromptPanel v-if="store.promptPanelVisible" />
       </div>
 
       <!-- Modals -->
@@ -118,6 +131,27 @@ const prompt = ref(store.lastPrompt || "");
 const fileInput = ref<HTMLInputElement | null>(null);
 
 if (store.architecture) store._rebuildGraph();
+
+const inVsCode = ref(window.parent !== window);
+
+const decomposeActiveWorkspace = () => {
+  if (inVsCode.value) {
+    store.uploadLoading = true;
+    store.error = null;
+    window.parent.postMessage({ command: "readWorkspaceFiles" }, "*");
+  }
+};
+
+window.addEventListener("message", (event) => {
+  const message = event.data;
+  if (message.command === "workspaceFilesResult") {
+    const payload = message.files.map((f: any) => ({
+      path: f.path,
+      content: f.content.slice(0, 8000),
+    }));
+    store.uploadCodebase(payload);
+  }
+});
 
 const examples = [
   "Build an API Gateway",

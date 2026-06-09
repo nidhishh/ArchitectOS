@@ -473,12 +473,37 @@ RULES:
 
 // Health
 app.get("/health", async (_req, res) => {
-  let ollamaOk = false;
-  try { const r = await fetch(`${OLLAMA_BASE_URL}/api/tags`); ollamaOk = r.ok; } catch { }
-  res.json({ status: "ok", ai: AI_ENABLED, ollama: ollamaOk, model: OLLAMA_MODEL });
+  const provider = process.env.AI_PROVIDER || "ollama";
+  let aiOk = false;
+  if (provider.toLowerCase() === "nvidia") {
+    aiOk = !!process.env.NVIDIA_API_KEY;
+  } else {
+    try {
+      const r = await fetch(`${OLLAMA_BASE_URL}/api/tags`);
+      aiOk = r.ok;
+    } catch { }
+  }
+
+  const model = provider.toLowerCase() === "nvidia"
+    ? (process.env.NVIDIA_MODEL || "deepseek-ai/deepseek-v4-pro")
+    : OLLAMA_MODEL;
+
+  res.json({
+    status: "ok",
+    ai: AI_ENABLED,
+    provider,
+    aiOk,
+    model
+  });
 });
 
 app.listen(PORT, () => {
+  const provider = process.env.AI_PROVIDER || "ollama";
+  const model = provider.toLowerCase() === "nvidia"
+    ? (process.env.NVIDIA_MODEL || "deepseek-ai/deepseek-v4-pro")
+    : OLLAMA_MODEL;
+
   console.log(`Backend on http://localhost:${PORT}`);
-  console.log(`AI: ${AI_ENABLED ? "ENABLED (" + OLLAMA_MODEL + ")" : "DISABLED (chutiya)"}`);
+  console.log(`AI: ${AI_ENABLED ? "ENABLED (" + provider + " - " + model + ")" : "DISABLED (chutiya)"}`);
 });
+

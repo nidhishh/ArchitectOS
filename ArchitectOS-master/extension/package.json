@@ -1,0 +1,77 @@
+{
+  "name": "architectos",
+  "displayName": "ArchitectOS",
+  "description": "Visualize codebase architectures directly in VS Code side-by-side with your editor.",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "architectos.open",
+        "title": "ArchitectOS: Open Visualizer"
+      }
+    ],
+    "configuration": {
+      "title": "ArchitectOS Settings",
+      "properties": {
+        "architectos.apiProvider": {
+          "type": "string",
+          "default": "nvidia",
+          "enum": [
+            "nvidia",
+            "ollama"
+          ],
+          "description": "Select the AI LLM provider to use."
+        },
+        "architectos.nvidiaApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Your NVIDIA NIM API Key (obtain from build.nvidia.com)."
+        },
+        "architectos.nvidiaModel": {
+          "type": "string",
+          "default": "deepseek-ai/deepseek-v4-pro",
+          "description": "The DeepSeek model to run on NVIDIA NIM."
+        },
+        "architectos.nvidiaBaseUrl": {
+          "type": "string",
+          "default": "https://integrate.api.nvidia.com/v1",
+          "description": "NVIDIA NIM API Base URL."
+        },
+        "architectos.ollamaBaseUrl": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "The base URL for your local Ollama instance."
+        },
+        "architectos.ollamaModel": {
+          "type": "string",
+          "default": "llama3.1:8b",
+          "description": "The local Ollama model to run."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.29.3",
+    "@babel/traverse": "^7.29.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@types/node": "^20.12.12",
+    "@types/babel__traverse": "^7.28.0",
+    "typescript": "^5.6.3"
+  }
+}

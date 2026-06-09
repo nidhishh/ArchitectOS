@@ -3,7 +3,10 @@ const API_BASE = "/api";
 async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
   try {
     return await fetch(`${API_BASE}${path}`, init);
-  } catch (e) {
+  } catch (e: any) {
+    if (e && e.name === "AbortError") {
+      throw e;
+    }
     if (e instanceof TypeError) {
       throw new Error(
         "Cannot reach the backend. Run: npm run dev -w backend (must show 'Backend on http://localhost:3000')"
@@ -13,11 +16,12 @@ async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
   }
 }
 
-export async function generateArchitecture(prompt: string, level: number, syntax: string = "Hide Syntax") {
+export async function generateArchitecture(prompt: string, level: number, syntax: string = "Hide Syntax", signal?: AbortSignal) {
   const res = await apiFetch("/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt, level, syntax }),
+    signal,
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "Unknown error" }));
@@ -51,12 +55,14 @@ export async function getFileStructure(architecture: any) {
   return data.files;
 }
 
-export async function analyzeCodebase(files: { path: string; content: string }[]) {
+export async function analyzeCodebase(files: { path: string; content: string }[], signal?: AbortSignal) {
   const res = await apiFetch("/analyze", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ files }),
+    signal,
   });
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "Unknown error" }));
     throw new Error(err.error || `Server error: ${res.status}`);

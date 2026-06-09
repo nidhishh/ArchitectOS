@@ -56,7 +56,9 @@ export const useAppStore = defineStore("app", {
       breadcrumbs: [] as ArchNode[],
       focusId: (saved?.focusId ?? null) as string | null,
       loading: false,
+      abortController: null as AbortController | null,
       error: null as string | null,
+      promptPanelVisible: saved?.promptPanelVisible ?? true,
       lastPrompt: saved?.lastPrompt ?? "",
       // README
       readme: (saved?.readme ?? "") as string,
@@ -75,6 +77,8 @@ export const useAppStore = defineStore("app", {
       // Node AI
       activeAINodeId: null as string | null,
       viewMode: (saved?.viewMode ?? "architecture") as "architecture" | "dependency",
+      sidebarWidth: saved?.sidebarWidth ?? 300,
+      sidebarCollapsed: saved?.sidebarCollapsed ?? false,
     };
   },
   actions: {
@@ -91,6 +95,9 @@ export const useAppStore = defineStore("app", {
         fileStructure: this.fileStructure,
         history: this.history.slice(-20),
         viewMode: this.viewMode,
+        promptPanelVisible: this.promptPanelVisible,
+        sidebarWidth: this.sidebarWidth,
+        sidebarCollapsed: this.sidebarCollapsed,
       });
     },
 
@@ -123,12 +130,16 @@ export const useAppStore = defineStore("app", {
     // ── Generate ─────────────────────────────────────────────────
     async generate(prompt: string) {
       if (!prompt.trim()) return;
+      if (this.abortController) {
+        this.abortController.abort();
+      }
+      this.abortController = new AbortController();
       this.loading = true;
       this.error = null;
       this.lastPrompt = prompt;
 
       try {
-        const data = await generateArchitecture(prompt, this.level, this.syntax);
+        const data = await generateArchitecture(prompt, this.level, this.syntax, this.abortController.signal);
         this.architecture = data;
         this.focusId = null;
         this.readmeStale = true;
@@ -142,9 +153,14 @@ export const useAppStore = defineStore("app", {
 
         this._persist();
       } catch (e: any) {
-        this.error = e.message || "Failed to generate";
+        if (e.name === "AbortError") {
+          this.error = "Generation stopped by user.";
+        } else {
+          this.error = e.message || "Failed to generate";
+        }
       } finally {
         this.loading = false;
+        this.abortController = null;
       }
     },
 
@@ -263,10 +279,14 @@ export const useAppStore = defineStore("app", {
 
     // ── Upload ───────────────────────────────────────────────────
     async uploadCodebase(files: { path: string; content: string }[]) {
+      if (this.abortController) {
+        this.abortController.abort();
+      }
+      this.abortController = new AbortController();
       this.uploadLoading = true;
       this.error = null;
       try {
-        const data = await analyzeCodebase(files);
+        const data = await analyzeCodebase(files, this.abortController.signal);
         this.architecture = data;
         this.focusId = null;
         this.lastPrompt = "[Uploaded Codebase]";
@@ -276,15 +296,25 @@ export const useAppStore = defineStore("app", {
         this._rebuildGraph();
         this._persist();
       } catch (e: any) {
-        this.error = e.message || "Failed to analyze codebase";
+        if (e.name === "AbortError") {
+          this.error = "Codebase analysis stopped by user.";
+        } else {
+          this.error = e.message || "Failed to analyze codebase";
+        }
       } finally {
         this.uploadLoading = false;
+        this.abortController = null;
       }
     },
 
     // ── Code viewer ───────────────────────────────────────────────
     toggleCodeViewer() {
       this.codeViewerVisible = !this.codeViewerVisible;
+    },
+
+    togglePromptPanel() {
+      this.promptPanelVisible = !this.promptPanelVisible;
+      this._persist();
     },
 
     // ── Node AI ──────────────────────────────────────────────────
@@ -311,8 +341,18 @@ export const useAppStore = defineStore("app", {
       }
     },
 
+    stopGeneration() {
+      if (this.abortController) {
+        this.abortController.abort();
+        this.abortController = null;
+        this.loading = false;
+        this.uploadLoading = false;
+      }
+    },
+
     // ── Reset ────────────────────────────────────────────────────
     reset() {
+      this.stopGeneration();
       this.level = 2;
       this.mode = "AI Decompose";
       this.syntax = "Hide Syntax";
@@ -329,6 +369,9 @@ export const useAppStore = defineStore("app", {
       this.readmeVisible = false;
       this.fileStructure = [];
       this.fileStructureVisible = false;
+      this.promptPanelVisible = true;
+      this.sidebarWidth = 300;
+      this.sidebarCollapsed = false;
       this._persist();
     },
   },

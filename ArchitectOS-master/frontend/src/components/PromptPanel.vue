@@ -1,6 +1,14 @@
 <template>
-  <div class="absolute bottom-6 right-6 w-[380px] glass-card rounded-none p-4 z-40 select-none shadow-xl border border-borderMuted">
-    <div class="flex gap-2">
+  <div class="absolute bottom-6 right-6 w-[380px] glass-card rounded-none p-4 z-40 select-none shadow-xl border border-borderMuted relative">
+    <!-- Close button -->
+    <button
+      @click="store.togglePromptPanel()"
+      class="absolute top-2.5 right-2.5 text-textSecondary hover:text-red-400 transition duration-150 text-[10px] font-bold p-0.5 leading-none focus:outline-none"
+      title="Close Prompt Panel"
+    >
+      ✕
+    </button>
+    <div class="flex gap-2 pr-4">
       <input
         v-model="prompt"
         @keyup.enter="submit"
